@@ -115,11 +115,11 @@
 <footer id="event-log"></footer>
 
 <script>
-    // --- CONFIG & STATE ---
+    /// --- CONFIG & STATE ---
     const CONFIG = { minPx: 2, deiceCost: 1200, slotChance: 0.4 };
-    let gameTime = 420; // 07:00
+    let gameTime = 420; 
     let revenue = 0;
-    let dayIndex = 0; // 0=Mon, 1=Tue...
+    let dayIndex = 0; 
     const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
     
     let fleet = Array.from({length: 14}, (_, i) => ({
@@ -128,56 +128,60 @@
         base: ['CPH', 'BLL', 'ARN', 'HEL'][i % 4],
         hours: Math.random() * 400,
         isSpare: false,
+        status: 'SERVICEABLE',
         flights: []
     }));
 
-    // --- SOUND ENGINE ---
-    const sfx = {
-        telex: new Audio('https://actions.google.com/sounds/v1/office/typing_fast.ogg'),
-        alert: new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg'),
-        radio: new Audio('https://actions.google.com/sounds/v1/science_fiction/radio_static.ogg')
-    };
-    function play(key) { sfx[key].currentTime = 0; sfx[key].volume = 0.2; sfx[key].play().catch(()=>{}); }
+    // --- SCENARIO DATA ---
+    const scenarios = [
+        { id: 'strike', name: "Pilot Strike", desc: "Grounds 3 random planes.", type: 'danger' },
+        { id: 'weather', name: "NUK Blizzard", desc: "Heavy de-icing costs.", type: 'warn' },
+        { id: 'med', name: "Medical Diversion", desc: "Emergency at AMS.", type: 'danger' }
+    ];
 
-    // --- SCHEDULE GENERATOR ---
-    function generateDaySchedule() {
-        fleet.forEach(ac => ac.flights = []);
-        const isMidWeek = (dayIndex === 1 || dayIndex === 2); // Tue/Wed Dip
-        
-        fleet.forEach((ac, idx) => {
-            if (ac.isSpare) return;
-            
-            // Standard Charters
-            if (!isMidWeek || idx < 7) {
-                let dest = ac.base === 'LLA' ? 'LPA' : (idx % 2 === 0 ? 'LPA' : 'PMI');
-                let start = 480 + (idx * 15);
-                let dur = (ac.base === 'LLA' && dest === 'LPA') ? 360 : 180;
-                
-                let f1 = { id: Math.random(), route: `${ac.base}-${dest}`, start, dur, type: dest==='LPA'&&ac.base==='LLA'?'lla-lpa':'charter', delayed: false };
-                let f2 = { id: Math.random(), route: `${dest}-${ac.base}`, start: start + dur + 50, dur, type: 'charter', delayed: false };
-                ac.flights.push(f1, f2);
-            }
-        });
-        renderBoard();
-    }
-
-    // --- UI ENGINE ---
+    // --- RE-RENDER BOARD (FIXED CREW VISIBILITY) ---
     function renderBoard() {
         const tailsDiv = document.getElementById('tails');
         const lanesDiv = document.getElementById('lanes');
+        const scenarioDiv = document.getElementById('scenario-list');
+        
         tailsDiv.innerHTML = ''; 
-        const cursor = document.getElementById('time-cursor');
-        lanesDiv.innerHTML = '';
-        lanesDiv.appendChild(cursor);
+        lanesDiv.innerHTML = '<div id="time-cursor"></div>';
+        scenarioDiv.innerHTML = '';
 
+        // 1. Render Scenarios in Sidebar
+        scenarios.forEach(s => {
+            const sEl = document.createElement('div');
+            sEl.className = 'btn';
+            sEl.style.display = 'block';
+            sEl.style.marginBottom = '5px';
+            sEl.style.borderColor = `var(--${s.type})`;
+            sEl.innerHTML = `<b>${s.name}</b><br><small>${s.desc}</small>`;
+            sEl.onclick = () => activateScenario(s.id);
+            scenarioDiv.appendChild(sEl);
+        });
+
+        // 2. Render Fleet and Crew
         fleet.forEach((ac, idx) => {
             const t = document.createElement('div');
             t.className = 'tail-cell';
+            t.style.height = "130px";
+            
+            // Create 6 crew dots based on health
+            let crewHtml = '<div class="crew-grid">';
+            for(let i=0; i<6; i++) {
+                crewHtml += `<div class="crew-dot"></div>`;
+            }
+            crewHtml += '</div>';
+
             t.innerHTML = `
                 <div style="font-weight:bold; color:var(--accent)">${ac.tail}</div>
-                <div class="crew-grid">${Array(6).fill('<div class="crew-dot"></div>').join('')}</div>
-                <small style="font-size:9px;">BASE: ${ac.base} | ${Math.floor(ac.hours)}h</small>
-                <button class="btn" style="font-size:8px; padding:2px 5px;" onclick="toggleSpare(${idx})">${ac.isSpare?'ACTIVATE':'SET SPARE'}</button>
+                ${crewHtml}
+                <div style="font-size:9px; color:var(--success)">STAFFED & LEGAL</div>
+                <small style="font-size:9px;">${ac.base} | ${Math.floor(ac.hours)}h</small>
+                <button class="btn" style="font-size:8px; padding:2px 5px;" onclick="toggleSpare(${idx})">
+                    ${ac.isSpare ? 'ACTIVATE' : 'SET SPARE'}
+                </button>
             `;
             tailsDiv.appendChild(t);
 
@@ -199,128 +203,33 @@
         setupDrag();
     }
 
-    function logEvent(type, msg, sev = '') {
-        const log = document.getElementById('event-log');
-        const time = document.getElementById('clock').innerText;
-        log.innerHTML = `<div class="log-entry ${sev}"><span class="log-time">[${time}]</span><b>${type}</b>: ${msg}</div>` + log.innerHTML;
-        play('telex');
-    }
-
-    // --- INTERACTION ---
-    function setupDrag() {
-        interact('.flight').draggable({
-            listeners: {
-                move(event) {
-                    const target = event.target;
-                    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-                    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-                    target.style.transform = `translate(${x}px, ${y}px)`;
-                    target.setAttribute('data-x', x);
-                    target.setAttribute('data-y', y);
-                    target.style.zIndex = 1000;
-                },
-                end(event) {
-                    const flightEl = event.target;
-                    const dropzone = document.elementFromPoint(event.clientX, event.clientY)?.closest('.dropzone');
-                    if (dropzone) {
-                        const newIdx = dropzone.dataset.acIdx;
-                        const fId = flightEl.id.replace('f-', '');
-                        executeSwap(fId, newIdx);
-                    }
-                    flightEl.style.transform = 'none';
-                    flightEl.setAttribute('data-x', 0);
-                    flightEl.setAttribute('data-y', 0);
-                    renderBoard();
-                }
-            }
-        });
-    }
-
-    function executeSwap(fId, targetIdx) {
-        let fObj = null;
-        fleet.forEach(ac => {
-            const i = ac.flights.findIndex(f => f.id == fId);
-            if(i !== -1) fObj = ac.flights.splice(i, 1)[0];
-        });
-        if(fObj) {
-            fleet[targetIdx].flights.push(fObj);
-            logEvent('SWAP', `Tail Swap: ${fObj.route} moved to ${fleet[targetIdx].tail}`);
+    // --- SCENARIO LOGIC ---
+    function activateScenario(id) {
+        play('alert');
+        if (id === 'strike') {
+            logEvent('CRISIS', "Industrial Action: 3 tails grounded.", 'danger');
+            fleet[0].status = 'AOG';
+            fleet[1].status = 'AOG';
+            fleet[2].status = 'AOG';
+        } else if (id === 'med') {
+            logEvent('OPS', "Medical Diversion: Diversion to AMS initiated.", 'warn');
+            triggerMedical();
         }
-    }
-
-    function toggleSpare(idx) {
-        fleet[idx].isSpare = !fleet[idx].isSpare;
-        logEvent('FLEET', `${fleet[idx].tail} status changed.`);
         renderBoard();
     }
 
-    // --- GAME LOOP ---
-    function tick() {
-        gameTime += 1; // 1 sec = 1 min
-        if (gameTime >= 1440) {
-            gameTime = 0;
-            dayIndex = (dayIndex + 1) % 7;
-            document.getElementById('cur-day-label').innerText = days[dayIndex].substring(0,3);
-            generateDaySchedule();
-            logEvent('SYSTEM', `Day transition to ${days[dayIndex]}`);
-        }
-
-        const h = Math.floor(gameTime / 60).toString().padStart(2, '0');
-        const m = (gameTime % 60).toString().padStart(2, '0');
-        document.getElementById('clock').innerText = `${h}:${m}`;
-        document.getElementById('time-cursor').style.left = (gameTime * CONFIG.minPx) + 'px';
-
-        // Random Crisis Engine
-        if (Math.random() < 0.0004) triggerMedical();
-        if (Math.random() < 0.0002) triggerSickCall();
+    // --- RE-SYNC INITIALIZATION ---
+    function generateDaySchedule() {
+        fleet.forEach(ac => ac.flights = []);
+        fleet.forEach((ac, idx) => {
+            if (ac.isSpare) return;
+            let start = 480 + (idx * 20);
+            let f1 = { id: Math.random(), route: `${ac.base}-LPA`, start, dur: 180, type: 'charter', delayed: false };
+            let f2 = { id: Math.random(), route: `LPA-${ac.base}`, start: start + 240, dur: 180, type: 'charter', delayed: false };
+            ac.flights.push(f1, f2);
+        });
+        renderBoard();
     }
-
-    function triggerMedical() {
-        play('alert');
-        logEvent('CRITICAL', 'Medical Diversion! OY-GMC diverting to AMS.', 'danger');
-        // Simple Logic: Add a tech delay to a random flight
-        const ac = fleet[Math.floor(Math.random()*14)];
-        if(ac.flights[0]) { ac.flights[0].delayed = true; ac.flights[0].dur += 60; renderBoard(); }
-    }
-
-    function triggerSickCall() {
-        play('radio');
-        logEvent('CREW', 'Sick call on homebound LPA-CPH sling. Recovery needed.', 'warn');
-    }
-
-    // --- TUTORIAL ---
-    const tutSteps = [
-        "Welcome to the CPH Ops Center. You are the Duty Manager for 14 Boeing 737-800s.",
-        "Your core business is Sun Charters (LPA, TFS, PMI). On Tuesdays and Wednesdays, volume drops—use this for maintenance.",
-        "Watch out for the LLA-LPA flight. It is a 6-hour monster. Any delay means the crew will time out.",
-        "Drag flights to different planes if one breaks. Keep the Spare plane ready for emergencies. Good luck."
-    ];
-    let step = 0;
-    function initTutorial() {
-        document.getElementById('loading-screen').style.display = 'none';
-        document.getElementById('tutorial-overlay').classList.add('active');
-        document.getElementById('tut-text').innerText = tutSteps[0];
-    }
-    function advanceTutorial() {
-        step++;
-        if(step < tutSteps.length) {
-            document.getElementById('tut-text').innerText = tutSteps[step];
-        } else {
-            document.getElementById('tutorial-overlay').classList.remove('active');
-            generateDaySchedule();
-            setInterval(tick, 1000);
-        }
-    }
-
-    // --- LOADER ---
-    window.onload = () => {
-        let p = 0;
-        const iv = setInterval(() => {
-            p += Math.random() * 20;
-            if(p >= 100) { p=100; clearInterval(iv); document.getElementById('start-btn').style.display='block'; }
-            document.getElementById('load-bar').style.width = p + '%';
-        }, 200);
-    };
 </script>
 </body>
 </html>
