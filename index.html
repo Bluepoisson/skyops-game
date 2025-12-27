@@ -1,0 +1,241 @@
+skyops.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SkyOps: Nordic Fleet OCC</title>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <style>
+        :root { --bg: #0b0e14; --panel: #1a1f2b; --accent: #00d2ff; --warn: #ff9f43; --danger: #ee5253; --success: #10ac84; --border: #30363d; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #cfd8dc; margin: 0; overflow: hidden; }
+        
+        /* HEADER */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: #161b22; border-bottom: 1px solid var(--border); height: 50px; z-index: 100; }
+        .logo { font-weight: 800; color: var(--accent); letter-spacing: 1px; }
+        .stat-bar { display: flex; gap: 15px; font-size: 13px; }
+        
+        /* MAIN LAYOUT */
+        main { display: grid; grid-template-columns: 1fr 300px; height: calc(100vh - 50px); }
+        @media (max-width: 900px) { main { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+        /* GANTT CHART */
+        #occ-grid { display: grid; grid-template-columns: 80px 1fr; overflow-y: auto; background: #0d1117; }
+        .tail-column { background: var(--panel); border-right: 1px solid var(--border); position: sticky; left: 0; z-index: 20; }
+        .tail-cell { height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-bottom: 1px solid var(--border); font-weight: bold; font-size: 11px; }
+        .maint-progress { width: 50px; height: 4px; background: #333; margin-top: 4px; border-radius: 2px; }
+        .maint-fill { height: 100%; background: var(--success); border-radius: 2px; }
+
+        .timeline-scroll { position: relative; overflow-x: auto; overflow-y: hidden; cursor: crosshair; }
+        .hour-markers { display: flex; height: 30px; background: #161b22; border-bottom: 1px solid var(--border); width: 2880px; }
+        .hour { min-width: 120px; border-right: 1px dotted #333; font-size: 10px; line-height: 30px; padding-left: 5px; color: #8b949e; }
+        
+        .dropzone { height: 70px; border-bottom: 1px solid #222; position: relative; width: 2880px; }
+        
+        /* FLIGHT BLOCKS */
+        .flight { 
+            position: absolute; height: 50px; top: 10px; background: #238636; 
+            border-radius: 4px; color: white; font-size: 10px; padding: 8px; 
+            cursor: move; touch-action: none; border: 1px solid rgba(255,255,255,0.1);
+            z-index: 5; display: flex; flex-direction: column; justify-content: space-between;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .flight.acmi { background: #1f6feb; border-left: 4px solid var(--accent); }
+        .flight.maint { background: #444; border-left: 4px solid var(--warn); }
+        .flight b { font-size: 11px; }
+
+        /* TIME INDICATOR */
+        #time-cursor { position: absolute; top: 0; bottom: 0; width: 2px; background: #ffff00; z-index: 10; pointer-events: none; box-shadow: 0 0 10px #ffff00; }
+
+        /* SIDEBAR PANELS */
+        .sidebar { background: var(--panel); border-left: 1px solid var(--border); padding: 15px; overflow-y: auto; }
+        .panel { background: #0d1117; border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        .panel h3 { font-size: 11px; margin: 0 0 12px 0; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+        
+        .contract { background: #21262d; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid transparent; cursor: pointer; }
+        .contract:hover { border-color: var(--accent); }
+        .contract-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        
+        .btn { background: var(--accent); color: #000; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; }
+        .btn-save { background: transparent; border: 1px solid var(--border); color: #8b949e; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">SKYOPS // NORDIC</div>
+    <div class="stat-bar">
+        <span>UTC: <b id="clock">08:00</b></span>
+        <span>REV: <b id="rev" style="color:var(--success)">$0</b></span>
+        <button class="btn btn-save" onclick="saveGame()">SYNC DATA</button>
+    </div>
+</header>
+
+<main>
+    <div id="occ-grid">
+        <div class="tail-column" id="tails"></div>
+        <div class="timeline-scroll" id="scroll-area">
+            <div class="hour-markers" id="hours"></div>
+            <div id="lanes"></div>
+            <div id="time-cursor"></div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="panel">
+            <h3>🌍 Weather Alerts</h3>
+            <div id="weather-box" style="font-size:12px; color:var(--warn)">All stations reporting nominal.</div>
+        </div>
+        <div class="panel">
+            <h3>💰 ACMI Market</h3>
+            <div id="market-list"></div>
+        </div>
+        <div class="panel">
+            <h3>👨‍✈️ Active Crew</h3>
+            <div id="crew-list" style="font-size:11px"></div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const CONFIG = { minPerPx: 2, hourWidth: 120, maintLimit: 500 };
+    let gameTime = 480; 
+    let revenue = 0;
+    
+    // Setup Fleet (14 Boeing 737-800s)
+    let fleet = Array.from({length: 14}, (_, i) => ({
+        tail: `OY-GM${String.fromCharCode(65 + i)}`,
+        base: ['CPH', 'BLL', 'ARN', 'HEL'][i % 4],
+        maintHours: Math.random() * 400,
+        flights: []
+    }));
+
+    // Initial Scheduled Flights
+    fleet[0].flights.push({ id: 101, route: 'CPH-PMI', start: 540, dur: 180, type: 'charter' });
+    fleet[2].flights.push({ id: 102, route: 'ARN-HEL', start: 510, dur: 70, type: 'acmi' });
+
+    function init() {
+        const hourRow = document.getElementById('hours');
+        for(let i=0; i<24; i++) {
+            const h = document.createElement('div');
+            h.className = 'hour';
+            h.innerText = `${i.toString().padStart(2,'0')}:00`;
+            hourRow.appendChild(h);
+        }
+        renderBoard();
+        setupInteractions();
+        setInterval(tick, 1000); // 1s = 1min
+        updateMarket();
+    }
+
+    function tick() {
+        gameTime++;
+        if(gameTime >= 1440) gameTime = 0;
+
+        const h = Math.floor(gameTime / 60).toString().padStart(2,'0');
+        const m = (gameTime % 60).toString().padStart(2,'0');
+        document.getElementById('clock').innerText = `${h}:${m}`;
+        document.getElementById('time-cursor').style.left = (gameTime * 2) + 'px';
+        document.getElementById('rev').innerText = `$${revenue.toLocaleString()}`;
+
+        // Random Weather Engine
+        if(gameTime % 120 === 0) {
+            const b = ['CPH', 'BLL', 'ARN', 'HEL'][Math.floor(Math.random()*4)];
+            document.getElementById('weather-box').innerHTML = `⚠️ High Wind at ${b}: Ground delays possible.`;
+        }
+    }
+
+    function renderBoard() {
+        const tails = document.getElementById('tails');
+        const lanes = document.getElementById('lanes');
+        const crewList = document.getElementById('crew-list');
+        tails.innerHTML = ''; lanes.innerHTML = ''; crewList.innerHTML = '';
+
+        fleet.forEach((ac, idx) => {
+            const mPct = (ac.maintHours / CONFIG.maintLimit) * 100;
+            tails.innerHTML += `
+                <div class="tail-cell">
+                    ${ac.tail}<br><small>${ac.base}</small>
+                    <div class="maint-progress"><div class="maint-fill" style="width:${mPct}%"></div></div>
+                </div>`;
+
+            const lane = document.createElement('div');
+            lane.className = 'dropzone';
+            lane.dataset.acIdx = idx;
+            
+            ac.flights.forEach(f => {
+                const fEl = document.createElement('div');
+                fEl.className = `flight ${f.type}`;
+                fEl.id = `f-${f.id}`;
+                fEl.style.width = (f.dur * 2) + 'px';
+                fEl.style.left = (f.start * 2) + 'px';
+                fEl.innerHTML = `<b>${f.route}</b><small>${f.type.toUpperCase()}</small>`;
+                lane.appendChild(fEl);
+            });
+            lanes.appendChild(lane);
+
+            crewList.innerHTML += `<div>${ac.tail} CREW: <span class="success">LEGAL</span></div>`;
+        });
+    }
+
+    function setupInteractions() {
+        interact('.flight').draggable({
+            listeners: {
+                move(event) {
+                    const target = event.target;
+                    const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                    const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+                    target.style.transform = `translate(${x}px, ${y}px)`;
+                    target.setAttribute('data-x', x);
+                    target.setAttribute('data-y', y);
+                    target.style.zIndex = 1000;
+                },
+                end(event) {
+                    // Reset position after move (Logic for tail swap would trigger here)
+                    event.target.style.transform = 'none';
+                    event.target.setAttribute('data-x', 0);
+                    event.target.setAttribute('data-y', 0);
+                    event.target.style.zIndex = 5;
+                    renderBoard();
+                }
+            }
+        });
+    }
+
+    function updateMarket() {
+        const m = document.getElementById('market-list');
+        const contracts = [
+            { id: 201, r: 'ARN-LHR', s: 660, d: 150, p: 14500, b: 'ARN' },
+            { id: 202, r: 'HEL-OSL', s: 720, d: 90, p: 9000, b: 'HEL' },
+            { id: 203, r: 'CPH-AMS', s: 900, d: 80, p: 11000, b: 'CPH' }
+        ];
+        m.innerHTML = contracts.map(c => `
+            <div class="contract" onclick="acceptJob(${JSON.stringify(c).replace(/"/g, '&quot;')})">
+                <div class="contract-row"><b>${c.r}</b> <span class="success">$${c.p}</span></div>
+                <div class="contract-row"><small>DEPART: ${Math.floor(c.s/60)}:00</small> <small>BASE: ${c.b}</small></div>
+            </div>
+        `).join('');
+    }
+
+    window.acceptJob = (job) => {
+        const ac = fleet.find(a => a.base === job.b);
+        if(ac) {
+            ac.flights.push({ id: job.id, route: job.r, start: job.s, dur: job.d, type: 'acmi' });
+            revenue += job.p;
+            renderBoard();
+        } else {
+            alert(`No aircraft available at ${job.b}`);
+        }
+    };
+
+    function saveGame() {
+        localStorage.setItem('SkyOps_Data', JSON.stringify({fleet, revenue, gameTime}));
+        alert("Operations Synced.");
+    }
+
+    init();
+</script>
+</body>
+</html>
