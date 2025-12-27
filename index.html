@@ -21,39 +21,42 @@
 
         /* LAYOUT */
         header { display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: #161b22; border-bottom: 1px solid var(--border); height: 60px; }
+        .stats { display: flex; gap: 15px; align-items: center; font-size: 13px; }
         main { display: grid; grid-template-columns: 1fr 300px; height: calc(100vh - 210px); }
-        #occ-grid { display: grid; grid-template-columns: 140px 1fr; overflow-y: auto; background: #0d1117; }
+        #occ-grid { display: grid; grid-template-columns: 150px 1fr; overflow-y: auto; background: #0d1117; }
         .tail-column { background: var(--panel); border-right: 1px solid var(--border); position: sticky; left: 0; z-index: 20; }
-        .tail-cell { height: 140px; border-bottom: 1px solid var(--border); padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .tail-cell { height: 160px; border-bottom: 1px solid var(--border); padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         
-        .timeline-scroll { position: relative; overflow-x: auto; background: repeating-linear-gradient(90deg, transparent, transparent 119px, #222 120px); }
+        .timeline-scroll { position: relative; overflow-x: auto; background: repeating-linear-gradient(90deg, transparent, transparent 119px, #222 120px); width: 2880px;}
         .hour-markers { display: flex; height: 30px; background: #161b22; width: 2880px; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border); }
         .hour { min-width: 120px; border-right: 1px solid #333; font-size: 10px; line-height: 30px; padding-left: 5px; color: #8b949e; }
         
-        .dropzone { height: 140px; border-bottom: 1px solid #222; position: relative; width: 2880px; }
-        #time-cursor { position: absolute; top: 0; bottom: 0; width: 2px; background: yellow; z-index: 100; pointer-events: none; }
+        .dropzone { height: 160px; border-bottom: 1px solid #222; position: relative; width: 2880px; }
+        #time-cursor { position: absolute; top: 0; bottom: 0; width: 2px; background: yellow; z-index: 100; pointer-events: none; box-shadow: 0 0 10px yellow; }
 
         /* FLIGHTS */
         .flight { position: absolute; height: 60px; top: 20px; background: #238636; border-radius: 4px; color: white; font-size: 10px; padding: 8px; z-index: 5; border: 1px solid rgba(255,255,255,0.1); }
-        .flight.acmi { background: #1f6feb; border-left: 4px solid var(--accent); }
-        .flight.slot-delay { background: var(--warn); color: black; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0.6; } }
+        .flight.lla-lpa { background: #003366; border-left: 4px solid #fff; }
 
-        /* CREW UI */
-        .crew-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; width: 100%; margin-top: 5px; }
-        .crew-dot { height: 10px; border-radius: 2px; background: var(--success); }
-        .fatigue-bar { width: 100%; height: 3px; background: #333; margin-top: 4px; border-radius: 1px; overflow: hidden; }
+        /* CREW */
+        .crew-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; width: 100%; margin: 5px 0; }
+        .crew-dot { height: 8px; border-radius: 1px; background: var(--success); }
+        .crew-dot.sick { background: var(--danger); animation: pulse 1s infinite; }
+        .fatigue-bar { width: 100%; height: 3px; background: #333; border-radius: 2px; overflow: hidden; }
         .fatigue-fill { height: 100%; background: var(--success); transition: width 0.5s; }
+        .status-pill { font-size: 8px; color: var(--accent); background: rgba(0,0,0,0.4); padding: 2px 4px; margin-top: 2px; }
 
-        /* SIDEBAR & CARDS */
+        /* SIDEBAR */
         aside { background: var(--panel); padding: 15px; border-left: 1px solid var(--border); overflow-y: auto; }
-        .sidebar-heading { font-size: 11px; color: var(--accent); text-transform: uppercase; margin: 15px 0 10px 0; border-bottom: 1px solid #333; }
-        .crew-card, .rest-card { background: #21262d; border: 1px solid var(--border); padding: 8px; margin-bottom: 6px; border-radius: 6px; font-size: 11px; }
-        .rest-card { border-color: var(--success); opacity: 0.7; }
+        .sidebar-heading { font-size: 11px; color: var(--accent); text-transform: uppercase; margin: 15px 0 10px; border-bottom: 1px solid #333; }
+        .crew-card, .rest-card, .hotel-card, .transit-card { background: #21262d; border: 1px solid var(--border); padding: 8px; margin-bottom: 6px; border-radius: 6px; font-size: 11px; }
+        .hotel-card { border-color: var(--warn); background: rgba(255,159,67,0.1); }
+        .transit-card { border-color: var(--accent); }
         .timer-pill { float: right; color: var(--success); font-weight: bold; }
         
         footer { height: 150px; background: #0d1117; border-top: 2px solid var(--border); overflow-y: auto; padding: 10px; font-family: monospace; font-size: 12px; }
-        .btn { background: #21262d; border: 1px solid var(--border); color: #fff; padding: 6px 10px; cursor: pointer; border-radius: 4px; font-size: 11px; }
+        .btn { background: #21262d; border: 1px solid var(--border); color: #fff; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 10px; }
+        @keyframes pulse { 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
@@ -61,8 +64,8 @@
 <div id="loading-screen">
     <div style="font-size: 32px; font-weight: 800; color: var(--accent);">SKYOPS</div>
     <div class="loader-bar"><div class="loader-progress" id="load-bar"></div></div>
-    <div id="load-tip" style="margin-top:15px; font-size:11px;">SYNCING ROSTERS...</div>
-    <button id="start-btn" class="btn" style="display:none; margin-top:20px;" onclick="initTutorial()">START SHIFT</button>
+    <div style="margin-top:15px; font-size:11px;">SYNCHRONIZING NETWORK...</div>
+    <button id="start-btn" class="btn" style="display:none; margin-top:20px; padding: 12px 30px;" onclick="startGame()">ENTER OCC</button>
 </div>
 
 <div id="tutorial-overlay" class="modal">
@@ -74,8 +77,9 @@
 </div>
 
 <header>
-    <div style="font-weight:800; color:var(--accent)">SKYOPS // NORDIC OCC</div>
-    <div style="display:flex; gap:20px; font-size:13px;">
+    <div style="font-weight:800; color:var(--accent)">SKYOPS // <span id="cur-day">MON</span></div>
+    <div class="stats">
+        <button class="btn" style="border-color: var(--warn); color: var(--warn);" onclick="undoMove()">↺ UNDO</button>
         <span>UTC: <b id="clock">07:00</b></span>
         <span>REV: <b id="rev" style="color:var(--success)">$0</b></span>
         <span>OTP: <b id="otp">100%</b></span>
@@ -93,146 +97,219 @@
         </div>
     </div>
     <aside>
-        <div class="sidebar-heading">Active Scenarios</div>
-        <div id="scenario-list"></div>
-        <div class="sidebar-heading">Standby Pool</div>
-        <div id="reserve-crew"></div>
-        <div class="sidebar-heading">Resting Crew</div>
-        <div id="resting-crew"></div>
+        <div class="sidebar-heading">Standby Pool (FIT)</div>
+        <div id="standby-pool"></div>
+        <div class="sidebar-heading">Logistics & Hotel</div>
+        <div id="logistics-pool"></div>
     </aside>
 </main>
 
 <footer id="event-log"></footer>
 
 <script>
-    // --- STATE & CONFIG ---
+    // --- STATE ---
     let gameTime = 420; 
     let revenue = 0;
-    let dayIndex = 0;
-    const days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+    let historyStack = [];
     
     let fleet = Array.from({length: 14}, (_, i) => ({
-        id: i,
-        tail: `OY-GM${String.fromCharCode(65 + i)}`,
+        id: i, tail: `OY-GM${String.fromCharCode(65+i)}`,
         base: ['CPH', 'BLL', 'ARN', 'HEL'][i % 4],
-        hours: Math.random() * 400,
-        isSpare: false,
         flights: [],
-        assignedCrew: Array.from({length:6}, () => ({ name: "Crew Member", dutyStart: 420 }))
+        crew: Array.from({length:6}, (v, k) => ({ 
+            id: Math.random(), 
+            name: "Crew " + (i*6+k), 
+            homeBase: ['CPH', 'BLL', 'ARN', 'HEL'][i % 4], 
+            status: "Healthy", 
+            returnTime: 0 
+        }))
     }));
 
-    let standbyPool = Array.from({length:8}, () => ({ name: "Standby Pilot", role: "CAPT", base: "CPH" }));
+    let standbyPool = [];
     let restingCrew = [];
+    let inTransitCrew = [];
 
-    // --- LOGIC ---
+    // --- UNDO SYSTEM ---
+    function saveState() {
+        const snapshot = JSON.parse(JSON.stringify({ fleet, revenue, standbyPool, restingCrew, inTransitCrew }));
+        historyStack.push(snapshot);
+        if (historyStack.length > 15) historyStack.shift();
+    }
+
+    function undoMove() {
+        if (historyStack.length === 0) { logEvent('SYSTEM', 'No moves to undo', 'warn'); return; }
+        const last = historyStack.pop();
+        fleet = last.fleet; revenue = last.revenue; standbyPool = last.standbyPool;
+        restingCrew = last.restingCrew; inTransitCrew = last.inTransitCrew;
+        logEvent('SYSTEM', 'Action Reversed', 'warn');
+        renderBoard();
+    }
+
+    // --- UTILS ---
+    function formatGameDate(mins) {
+        const d = new Date(2025, 11, 27); d.setMinutes(d.getMinutes() + mins);
+        return d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0') + " (" + d.getDate() + "/" + (d.getMonth()+1) + ")";
+    }
+
+    function logEvent(type, msg, sev) {
+        const log = document.getElementById('event-log');
+        log.innerHTML = `<div style="margin-bottom:3px; border-left: 2px solid var(--${sev})"><b>[${document.getElementById('clock').innerText}] ${type}:</b> ${msg}</div>` + log.innerHTML;
+    }
+
+    // --- ENGINE ---
     function tick() {
         gameTime++;
-        const h = Math.floor(gameTime / 60).toString().padStart(2, '0');
-        const m = (gameTime % 60).toString().padStart(2, '0');
+        const h = Math.floor(gameTime / 60).toString().padStart(2,'0');
+        const m = (gameTime % 60).toString().padStart(2,'0');
         document.getElementById('clock').innerText = `${h}:${m}`;
         document.getElementById('time-cursor').style.left = (gameTime * 2) + 'px';
 
-        // Update Resting
-        restingCrew.forEach((c, idx) => {
-            c.restLeft--;
-            if(c.restLeft <= 0) { standbyPool.push(c); restingCrew.splice(idx, 1); }
+        if(gameTime % 60 === 0) {
+            standbyPool.forEach(c => { if(c.base !== c.homeBase) revenue -= 6.25; });
+            document.getElementById('rev').innerText = `$${Math.floor(revenue)}`;
+        }
+
+        restingCrew.forEach((c, i) => {
+            if(gameTime >= c.returnTime) {
+                c.status = "Healthy"; standbyPool.push(restingCrew.splice(i,1)[0]);
+                logEvent('CREW', `${c.name} is now FIT at ${c.base}`, 'success');
+            }
         });
-        
-        if(gameTime % 10 === 0) renderBoard();
+
+        if(gameTime % 30 === 0) renderBoard();
     }
 
     function renderBoard() {
         const tailsDiv = document.getElementById('tails');
         const lanesDiv = document.getElementById('lanes');
-        const standbyDiv = document.getElementById('reserve-crew');
-        const restingDiv = document.getElementById('resting-crew');
-        const scenarioDiv = document.getElementById('scenario-list');
+        const standbyDiv = document.getElementById('standby-pool');
+        const logDiv = document.getElementById('logistics-pool');
 
-        tailsDiv.innerHTML = '';
+        tailsDiv.innerHTML = ''; 
         lanesDiv.innerHTML = '<div id="time-cursor"></div>';
-        
+
         fleet.forEach((ac, idx) => {
             let duty = gameTime - 420;
-            let fatPct = Math.min((duty/720)*100, 100);
-            let color = fatPct > 90 ? 'var(--danger)' : (fatPct > 70 ? 'var(--warn)' : 'var(--success)');
+            let fat = Math.min((duty/720)*100, 100);
+            let color = fat > 90 ? 'var(--danger)' : (fat > 70 ? 'var(--warn)' : 'var(--success)');
 
-            tailsDiv.innerHTML += `
-                <div class="tail-cell">
-                    <b>${ac.tail}</b>
-                    <div class="crew-grid">${Array(6).fill(`<div class="crew-dot" style="background:${color}"></div>`).join('')}</div>
-                    <div class="fatigue-bar"><div class="fatigue-fill" style="width:${fatPct}%; background:${color}"></div></div>
-                    <small style="font-size:9px; margin-top:5px;">${ac.base} | ${Math.floor(ac.hours)}h</small>
-                </div>`;
+            const t = document.createElement('div');
+            t.className = 'tail-cell';
+            let crewDots = ac.crew.map(c => `<div class="crew-dot ${c.status==='Sick'?'sick':''}" style="background:${c.status==='Sick'?'':color}"></div>`).join('');
+            
+            t.innerHTML = `
+                <b>${ac.tail}</b>
+                <div class="crew-grid">${crewDots}</div>
+                <div class="fatigue-bar"><div class="fatigue-fill" style="width:${fat}%; background:${color}"></div></div>
+                <div class="status-pill">${ac.base}</div>
+                <div style="display:flex; gap:2px; margin-top:5px">
+                    <button class="btn" style="font-size:8px" onclick="triggerSick(${idx})">SICK</button>
+                    <button class="btn" style="font-size:8px" onclick="callStandby(${idx})">REPL</button>
+                </div>
+            `;
+            tailsDiv.appendChild(t);
 
             const l = document.createElement('div');
-            l.className = 'dropzone';
-            l.dataset.acIdx = idx;
+            l.className = 'dropzone'; l.dataset.acIdx = idx;
             ac.flights.forEach(f => {
-                l.innerHTML += `<div class="flight ${f.type}" style="width:${f.dur*2}px; left:${f.start*2}px"><b>${f.route}</b></div>`;
+                l.innerHTML += `<div class="flight ${f.type}" id="f-${f.id}" style="width:${f.dur*2}px; left:${f.start*2}px"><b>${f.route}</b></div>`;
             });
             lanesDiv.appendChild(l);
         });
 
-        standbyDiv.innerHTML = standbyPool.map(c => `<div class="crew-card">${c.name} (${c.base})</div>`).join('');
-        restingDiv.innerHTML = restingCrew.map(c => `<div class="rest-card">${c.name} <span class="timer-pill">${Math.floor(c.restLeft/60)}h</span></div>`).join('');
-        
-        scenarioDiv.innerHTML = `
-            <button class="btn" style="width:100%; margin-bottom:5px; border-color:var(--danger)" onclick="triggerCrisis('strike')">PILOT STRIKE</button>
-            <button class="btn" style="width:100%; border-color:var(--warn)" onclick="triggerCrisis('med')">MEDICAL DIVERSION</button>
-        `;
+        standbyPool.forEach(c => {
+            standbyDiv.innerHTML += `<div class="crew-card"><b>${c.name}</b> <small>${c.base}</small></div>`;
+        });
+
+        restingCrew.forEach(c => {
+            logDiv.innerHTML += `<div class="rest-card"><b>${c.name}</b><br><span class="timer-pill">FIT: ${formatGameDate(c.returnTime)}</span></div>`;
+        });
+
+        standbyPool.forEach(c => {
+            if(c.base !== c.homeBase) {
+                logDiv.innerHTML += `<div class="hotel-card"><b>${c.name}</b> <span style="float:right; color:red">HOTEL</span><br><small>Stranded in ${c.base}</small></div>`;
+            }
+        });
         setupDrag();
     }
 
-    function triggerCrisis(type) {
-        if(type === 'strike') {
-            alert("STRIKE: 3 Aircraft grounded!");
-            fleet[0].flights = []; renderBoard();
-        } else {
-            alert("MEDICAL: OY-GMA diverting to AMS.");
-        }
-    }
-
-    // --- INIT ---
-    function initTutorial() {
-        document.getElementById('loading-screen').style.display = 'none';
-        document.getElementById('tutorial-overlay').classList.add('active');
-        document.getElementById('tut-text').innerText = "Welcome Dispatcher. Manage 14 planes. Watch for crew fatigue (the bars below the tails). 12 hours is the limit!";
-    }
-
-    function advanceTutorial() {
-        document.getElementById('tutorial-overlay').classList.remove('active');
-        generateSchedule();
-        setInterval(tick, 1000);
-    }
-
-    function generateSchedule() {
-        fleet.forEach((ac, idx) => {
-            let start = 480 + (idx * 20);
-            ac.flights.push({ id: Math.random(), route: `${ac.base}-LPA`, start, dur: 240, type: 'charter' });
-            ac.flights.push({ id: Math.random(), route: `LPA-${ac.base}`, start: start+300, dur: 240, type: 'charter' });
-        });
+    function triggerSick(idx) {
+        saveState();
+        const ac = fleet[idx]; const c = ac.crew[0];
+        c.status = "Sick"; c.returnTime = gameTime + 2880;
+        logEvent('SICK', `${ac.tail}: Unfit until ${formatGameDate(c.returnTime)}`, 'danger');
         renderBoard();
+    }
+
+    function callStandby(acIdx) {
+        saveState();
+        const ac = fleet[acIdx];
+        if (standbyPool.length > 0) {
+            const repl = standbyPool.shift();
+            ac.crew[0] = { ...repl, dutyStart: gameTime, status: "Healthy" };
+            revenue -= 2000;
+            logEvent('CREW', `Standby deployed to ${ac.tail}. -$2,000`, 'success');
+            renderBoard();
+        }
     }
 
     function setupDrag() {
         interact('.flight').draggable({
             listeners: {
+                start() { saveState(); },
                 move(e) {
                     const t = e.target;
                     const x = (parseFloat(t.getAttribute('data-x')) || 0) + e.dx;
                     const y = (parseFloat(t.getAttribute('data-y')) || 0) + e.dy;
                     t.style.transform = `translate(${x}px, ${y}px)`;
                     t.setAttribute('data-x', x); t.setAttribute('data-y', y);
+                    t.style.zIndex = 1000;
                 },
-                end(e) { e.target.style.transform = ''; renderBoard(); }
+                end(e) {
+                    const dropzone = document.elementFromPoint(e.clientX, e.clientY)?.closest('.dropzone');
+                    if (dropzone) {
+                        const targetIdx = dropzone.dataset.acIdx;
+                        const fId = e.target.id.replace('f-', '');
+                        executeSwap(fId, targetIdx);
+                    }
+                    e.target.style.transform = ''; renderBoard();
+                }
             }
         });
     }
 
+    function executeSwap(fId, targetIdx) {
+        let fObj = null;
+        fleet.forEach(ac => {
+            const i = ac.flights.findIndex(f => f.id == fId);
+            if(i !== -1) fObj = ac.flights.splice(i, 1)[0];
+        });
+        if(fObj) fleet[targetIdx].flights.push(fObj);
+    }
+
+    function startGame() {
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('tutorial-overlay').classList.add('active');
+        document.getElementById('tut-text').innerText = "OCC Online. Use UNDO to reverse mistakes. Long sectors (LLA-LPA) drain crew faster. Hotel costs apply to crew away from home base.";
+    }
+
+    function advanceTutorial() {
+        document.getElementById('tutorial-overlay').classList.remove('active');
+        generateSchedule(); setInterval(tick, 1000);
+    }
+
+    function generateSchedule() {
+        fleet.forEach((ac, idx) => {
+            let start = 480 + (idx * 30);
+            ac.flights.push({ id: Math.random(), route: `${ac.base}-LPA`, start, dur: 240, type: 'charter' });
+            ac.flights.push({ id: Math.random(), route: `LPA-${ac.base}`, start: start+300, dur: 240, type: 'charter' });
+        });
+        renderBoard();
+    }
+
     window.onload = () => {
-        let p = 0;
-        const iv = setInterval(() => {
-            p += 5; document.getElementById('load-bar').style.width = p + '%';
+        let p = 0; const iv = setInterval(() => {
+            p += 10; document.getElementById('load-bar').style.width = p + '%';
             if(p >= 100) { clearInterval(iv); document.getElementById('start-btn').style.display='block'; }
         }, 100);
         const hr = document.getElementById('hours');
