@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyOps // Aviobook & PDC Master</title>
+    <title>SkyOps // Aviobook Master Suite</title>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <style>
         :root { 
@@ -14,58 +14,65 @@
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--avio-grey); color: var(--avio-text); margin: 0; overflow: hidden; }
 
-        /* HEADER & NAVIGATION */
         header { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: var(--avio-navy); color: white; height: 50px; }
         nav { display: flex; background: #2c3e50; height: 35px; border-bottom: 1px solid var(--avio-border); }
         .tab-btn { padding: 0 20px; color: #bdc3c7; line-height: 35px; font-size: 11px; cursor: pointer; border-right: 1px solid #3e5871; font-weight: 600; }
         .tab-btn.active { background: var(--avio-grey); color: var(--avio-navy); }
 
-        /* LAYOUT */
+        /* VIEW PANES */
         .view-pane { display: none; height: calc(100vh - 205px); }
         .view-pane.active { display: grid; }
         
-        /* OCC VIEW */
         #view-occ { grid-template-columns: 1fr 340px; }
         #occ-grid { display: grid; grid-template-columns: 190px 1fr; overflow-y: auto; background: white; border-right: 1px solid var(--avio-border); }
         
-        /* PDC VIEW */
-        #view-pdc { grid-template-columns: 1fr; background: white; overflow-y: auto; padding: 20px; }
-        .pdc-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        .pdc-table th { text-align: left; padding: 10px; background: var(--avio-grey); border-bottom: 2px solid var(--avio-border); }
-        .pdc-table td { padding: 8px; border-bottom: 1px solid var(--avio-border); }
-        .fatigue-bar { height: 4px; background: #eee; border-radius: 2px; width: 60px; overflow: hidden; }
-        .fatigue-fill { height: 100%; background: var(--success); }
+        /* DELAY SHADING CLASSES */
+        .dly-minor { border-left-color: var(--avio-blue) !important; background: #f0f7ff; }
+        .dly-yellow { border-left-color: var(--warn) !important; background: #fffdf0; }
+        .dly-red { border-left-color: var(--danger) !important; background: #fff5f5; }
+        .dly-severe { border-left-color: #000 !important; background: #2d3436; color: white !important; }
+        .dly-curfew { border-left-color: #d35400 !important; background: #fff3e0; }
+        .dly-discretion { border-left-color: #9b59b6 !important; background: #fdf0ff; }
+        .slot-pill { border: 2px dashed #e67e22 !important; }
 
-        /* SHARED COMPONENTS */
+        /* TAILS & GANTT */
         .tail-column { background: #fdfdfd; border-right: 1px solid var(--avio-border); position: sticky; left: 0; z-index: 20; }
         .tail-cell { height: 215px; border-bottom: 1px solid var(--avio-border); padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+        .tail-cell.aog { background: #fff5f5; border-left: 5px solid var(--danger); }
         .timeline-scroll { position: relative; overflow-x: auto; background: white; width: 2880px; }
         .hour-markers { display: flex; height: 35px; background: #ebf0f4; border-bottom: 1px solid var(--avio-border); width: 2880px; position: sticky; top:0; z-index:10; }
         .hour { min-width: 120px; border-right: 1px solid var(--avio-border); font-size: 11px; line-height: 35px; padding-left: 10px; color: #7f8c8d; }
         .dropzone { height: 215px; border-bottom: 1px solid var(--avio-border); position: relative; width: 2880px; }
-        .flight { position: absolute; height: 70px; top: 75px; background: white; border: 1px solid #bdc3c7; border-radius: 4px; font-size: 10px; padding: 8px; z-index: 5; border-left: 5px solid var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        
+        .flight { position: absolute; height: 75px; top: 70px; background: white; border: 1px solid #bdc3c7; border-radius: 4px; padding: 8px; z-index: 5; border-left: 5px solid var(--success); box-shadow: 0 2px 4px rgba(0,0,0,0.05); font-size: 10px; cursor: pointer; }
+
+        /* PDC TABLE */
+        #view-pdc { grid-template-columns: 1fr; background: white; overflow-y: auto; padding: 20px; }
+        .pdc-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .pdc-table th { text-align: left; padding: 10px; background: var(--avio-grey); border-bottom: 2px solid var(--avio-border); }
+        .pdc-table td { padding: 8px; border-bottom: 1px solid var(--avio-border); }
+
         #time-cursor { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); z-index: 100; pointer-events: none; }
         aside { background: white; padding: 15px; overflow-y: auto; }
         footer { height: 120px; background: var(--avio-navy); color: #94a3b8; padding: 10px; overflow-y: auto; font-family: monospace; font-size: 11px; }
 
-        /* MODALS */
-        #modal { visibility: hidden; opacity: 0; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:999; display:flex; align-items:center; justify-content:center; }
+        /* MODALS & TERMINALS */
+        #modal { visibility: hidden; opacity: 0; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:999; display:flex; align-items:center; justify-content:center; }
         #modal.active { visibility: visible; opacity: 1; }
-        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 480px; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 480px; border-top: 6px solid var(--avio-navy); }
+        .pps-terminal { font-family: monospace; background: #000; color: #10ac84; padding: 15px; border-radius: 4px; margin: 10px 0; font-size: 11px; border: 1px solid #333; }
         .btn { border: 1px solid var(--avio-border); background: white; padding: 6px 12px; cursor: pointer; font-size: 11px; font-weight: 600; border-radius: 4px; width: 100%; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div><span style="opacity:0.6">AVIOBOOK // </span><b>OCC HUB</b></div>
+    <div><span style="opacity:0.6">AVIOBOOK // </span><b>NORDIC OPS</b></div>
     <div style="font-size:12px;">UTC: <b id="clock">07:00</b> | BANK: <b id="rev" style="color:var(--success)">12,500,000</b> DKK</div>
 </header>
 
 <nav>
-    <div class="tab-btn active" id="tab-occ" onclick="switchTab('occ')">FLEET MONITOR</div>
-    <div class="tab-btn" id="tab-pdc" onclick="switchTab('pdc')">CREW ROSTER (PDC)</div>
+    <div class="tab-btn active" id="tab-occ" onclick="switchTab('occ')">OCC MONITOR</div>
+    <div class="tab-btn" id="tab-pdc" onclick="switchTab('pdc')">PDC CREW ROSTER</div>
 </nav>
 
 <div id="view-occ" class="view-pane active">
@@ -77,20 +84,18 @@
         </div>
     </div>
     <aside>
-        <h4 style="margin:0 0 10px 0; font-size:11px; color:#7f8c8d;">ASCMI SELL-BACK</h4>
+        <h4 style="margin:0 0 10px 0; font-size:11px; color:#7f8c8d;">ASCMI MARKET</h4>
         <div id="ascm-list"></div>
         <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-        <h4 style="margin:0 0 10px 0; font-size:11px; color:#7f8c8d;">MCC LOG</h4>
-        <div id="mcc-feed" style="font-size:11px;">Monitoring fleet sensors...</div>
+        <h4 style="margin:0 0 10px 0; font-size:11px; color:#7f8c8d;">MCC TERMINAL</h4>
+        <div id="mcc-feed" style="font-size:11px;">Awaiting telemetry...</div>
     </aside>
 </div>
 
 <div id="view-pdc" class="view-pane">
     <table class="pdc-table">
         <thead>
-            <tr>
-                <th>BASE</th><th>ROLE</th><th>NAME</th><th>STATUS</th><th>FATIGUE</th><th>ACTION</th>
-            </tr>
+            <tr><th>BASE</th><th>ROLE</th><th>NAME</th><th>STATUS</th><th>FATIGUE</th><th>REST</th></tr>
         </thead>
         <tbody id="pdc-body"></tbody>
     </table>
@@ -110,7 +115,6 @@
     let gameTime = 420; 
     let revenue = 12500000;
     let crewPool = [];
-    let externalOffers = [];
     const BASES = { 'CPH': 60, 'BLL': 20, 'HEL': 15, 'ARN': 5 };
     
     let fleet = Array.from({length: 13}, (_, i) => ({
@@ -124,7 +128,7 @@
         Object.keys(BASES).forEach(base => {
             for(let i=0; i<BASES[base]; i++) {
                 let role = i < (BASES[base]*0.2) ? "CPT" : (i < (BASES[base]*0.4) ? "FO" : "SCCM");
-                crewPool.push({ id: idCounter++, name: `${role}-${100+idCounter}`, role, base, fatigueScore: Math.floor(Math.random()*30), status: "READY" });
+                crewPool.push({ id: idCounter++, name: `${role}-${100+idCounter}`, role, base, fatigueScore: 0, status: "READY" });
             }
         });
 
@@ -134,8 +138,8 @@
             ac.crew.forEach(c => c.status = "ASSIGNED");
             const start = 480 + (i * 20);
             ac.flights = [
-                { id: Math.random(), route: `${ac.base}-LPA`, start, dur: 310, dly: 0 },
-                { id: Math.random(), route: `LPA-${ac.base}`, start: start + 375, dur: 330, dly: 0 }
+                { id: Math.random(), route: `${ac.base}-LPA`, start, dur: 310, dly: 0, slot: (i%3===0?{ctot:start+55}:null), ready: false },
+                { id: Math.random(), route: `LPA-${ac.base}`, start: start + 375, dur: 330, dly: 0, slot: null, ready: false }
             ];
         });
 
@@ -147,20 +151,16 @@
 
     function tick() {
         gameTime++;
-        updateUI();
-        if(gameTime % 30 === 0) render();
-        if(gameTime % 240 === 0) generateASCM();
-        checkMaint();
-    }
-
-    function updateUI() {
         document.getElementById('clock').innerText = formatMins(gameTime);
         document.getElementById('rev').innerText = revenue.toLocaleString('de-DE');
         document.getElementById('time-cursor').style.left = (gameTime * 2) + 'px';
+        
+        if(gameTime % 25 === 0) render();
+        if(Math.random() < 0.0003) triggerTechEvent();
+        checkMaint();
     }
 
     function render() {
-        // Render OCC (Fleet)
         const tails = document.getElementById('tails');
         const lanes = document.getElementById('lanes');
         tails.innerHTML = ''; lanes.innerHTML = '<div id="time-cursor"></div>';
@@ -168,30 +168,52 @@
         fleet.forEach((ac, idx) => {
             tails.innerHTML += `<div class="tail-cell ${ac.status==='AOG'?'aog':''}">
                 <div style="font-weight:700;">${ac.tail} <small>(${ac.base})</small></div>
-                <div style="font-size:9px;">${ac.crew.map(c=>c.name).join('<br>')}</div>
-                <div style="font-size:9px;">STATUS: ${ac.status}</div>
+                <div class="crew-list">${ac.crew.map(c=>`<span><b class="${c.fatigueScore>75?'fatigued':''}">${c.role}:</b> ${c.name}</span>`).join('<br>')}</div>
                 ${ac.techAlert ? `<button class="btn" style="background:var(--warn); border:0;" onclick="openMCC(${idx})">MCC</button>` : ''}
+                <div style="font-size:9px;">STATUS: ${ac.status}</div>
             </div>`;
             const l = document.createElement('div');
-            l.className = 'dropzone';
+            l.className = 'dropzone'; l.dataset.idx = idx;
             ac.flights.forEach(f => {
-                l.innerHTML += `<div class="flight" style="width:${f.dur*2}px; left:${f.start*2}px"><b>${f.route}</b></div>`;
+                const arrival = f.start + f.dly + f.dur;
+                const fdp = arrival - (ac.flights[0].start - 60);
+                
+                let dlyCls = '';
+                if (arrival > 1380) dlyCls = 'dly-curfew';
+                else if (fdp > 780 && !ac.discretion) dlyCls = 'dly-discretion';
+                else if (f.dly >= 180) dlyCls = 'dly-severe';
+                else if (f.dly >= 120) dlyCls = 'dly-red';
+                else if (f.dly >= 45) dlyCls = 'dly-yellow';
+                else if (f.dly >= 15) dlyCls = 'dly-minor';
+
+                l.innerHTML += `<div class="flight ${dlyCls} ${f.slot ? 'slot-pill' : ''}" style="width:${f.dur*2}px; left:${f.start*2}px" oncontextmenu="event.preventDefault(); openPPS(${idx}, '${f.id}')">
+                    <div style="display:flex; justify-content:space-between"><b>${f.route}</b> <b>+${f.dly}m</b></div>
+                    <div style="font-size:8px; margin-top:5px; opacity:0.8;">BLK: ${Math.floor(f.dur/60)}h FDP: ${Math.floor(fdp/60)}h</div>
+                    ${f.slot ? `<div style="position:absolute; bottom:4px; right:4px; font-weight:bold; color:#e67e22;">CTOT ${formatMins(f.slot.ctot)}</div>` : ''}
+                </div>`;
             });
             lanes.appendChild(l);
         });
 
-        // Render PDC (Crew)
-        const pdcBody = document.getElementById('pdc-body');
-        pdcBody.innerHTML = crewPool.map(c => `
-            <tr>
-                <td>${c.base}</td><td>${c.role}</td><td>${c.name}</td>
-                <td style="color:${c.status==='READY'?'var(--success)':'var(--warn)'}">${c.status}</td>
-                <td>
-                    <div class="fatigue-bar"><div class="fatigue-fill" style="width:${c.fatigueScore}%; background:${c.fatigueScore>70?'var(--danger)':'var(--success)'}"></div></div>
-                </td>
-                <td><button onclick="alert('Roster Action: '+ '${c.name}')">EDIT</button></td>
-            </tr>
-        `).join('');
+        // PDC Update
+        document.getElementById('pdc-body').innerHTML = crewPool.map(c => `<tr><td>${c.base}</td><td>${c.role}</td><td>${c.name}</td><td>${c.status}</td><td>${c.fatigueScore}%</td><td><button>REST</button></td></tr>`).join('');
+    }
+
+    function openPPS(acIdx, fId) {
+        const f = fleet[acIdx].flights.find(fl => fl.id == fId);
+        if(!f.slot) return;
+        document.getElementById('m-title').innerText = `PPS Terminal: ${f.route}`;
+        document.getElementById('m-body').innerHTML = `
+            <div class="pps-terminal">SAM SLOT MSG // CTOT: ${formatMins(f.slot.ctot)}<br>DELAY: ${f.slot.ctot - f.start}m</div>
+            <button class="btn" style="background:var(--success); color:white;" onclick="improveSlot(${acIdx}, '${fId}')">SEND REA / REQUEST IMPROVEMENT</button>
+        `;
+        document.getElementById('modal').classList.add('active');
+    }
+
+    function improveSlot(acIdx, fId) {
+        const f = fleet[acIdx].flights.find(fl => fl.id == fId);
+        const imp = 20; f.slot.ctot -= imp; f.dly = Math.max(0, f.slot.ctot - f.start);
+        closeModal(); render();
     }
 
     function switchTab(t) {
@@ -201,8 +223,15 @@
     }
 
     function formatMins(m) { return Math.floor(m/60).toString().padStart(2,'0') + ":" + (m%60).toString().padStart(2,'0'); }
+    function closeModal() { document.getElementById('modal').classList.remove('active'); }
     function checkMaint() { fleet.forEach(ac => { if(ac.status === "AOG" && gameTime >= ac.rtsTime) ac.status = "ACTIVE"; }); }
-    function generateASCM() { /* ASCM Logic as previously defined */ }
+    function triggerTechEvent() { const ac = fleet[Math.floor(Math.random()*12)]; ac.techAlert = true; render(); }
+    function openMCC(idx) { 
+        document.getElementById('m-title').innerText = "MCC Troubleshooting";
+        document.getElementById('m-body').innerHTML = `<button class="btn" onclick="groundPlane(${idx}, 45)">QUICK FIX (45m)</button><button class="btn" onclick="groundPlane(${idx}, 240)">GROUND (4H)</button>`;
+        document.getElementById('modal').classList.add('active');
+    }
+    function groundPlane(idx, mins) { fleet[idx].status="AOG"; fleet[idx].rtsTime=gameTime+mins; fleet[idx].techAlert=false; closeModal(); render(); }
 
     window.onload = init;
 </script>
