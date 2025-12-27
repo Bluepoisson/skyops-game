@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyOps // Aviobook & ASCMI Master Build</title>
+    <title>SkyOps // Aviobook & MCC Master</title>
     <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
     <style>
         :root { 
@@ -19,29 +19,23 @@
             padding: 0 20px; background: var(--avio-navy); color: white; height: 50px;
         }
 
-        /* GRID LAYOUT */
         main { display: grid; grid-template-columns: 1fr 340px; height: calc(100vh - 170px); }
         #occ-grid { display: grid; grid-template-columns: 190px 1fr; overflow-y: auto; background: white; }
 
-        /* TAILS COLUMN */
         .tail-column { background: #fdfdfd; border-right: 1px solid var(--avio-border); position: sticky; left: 0; z-index: 20; }
-        .tail-cell { height: 210px; border-bottom: 1px solid var(--avio-border); padding: 12px; display: flex; flex-direction: column; justify-content: space-between; transition: 0.3s; }
+        .tail-cell { height: 210px; border-bottom: 1px solid var(--avio-border); padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
         .tail-cell.aog { background: #fff5f5; border-left: 5px solid var(--danger); }
         .tail-cell.tech-alert { border: 2px solid var(--danger); animation: flash 1s infinite; }
         @keyframes flash { 50% { border-color: transparent; } }
 
-        /* CREW LISTING */
         .crew-list { font-size: 9px; line-height: 1.5; color: #7f8c8d; }
-        .crew-list b { color: var(--avio-navy); cursor: pointer; border-bottom: 1px solid transparent; }
-        .crew-list b:hover { border-bottom-color: var(--avio-blue); }
+        .crew-list b { color: var(--avio-navy); cursor: pointer; }
         .fatigued { color: var(--danger) !important; font-weight: 800; }
-        .discretion-active { color: #9b59b6 !important; }
 
-        /* FLIGHT PILLS */
         .timeline-scroll { position: relative; overflow-x: auto; background: white; width: 2880px; }
         .hour-markers { display: flex; height: 35px; background: #ebf0f4; border-bottom: 1px solid var(--avio-border); width: 2880px; position: sticky; top:0; z-index:10; }
         .hour { min-width: 120px; border-right: 1px solid var(--avio-border); font-size: 11px; line-height: 35px; padding-left: 10px; color: #7f8c8d; }
-        .dropzone { height: 210px; border-bottom: 1px solid var(--avio-border); position: relative; width: 2880px; background: linear-gradient(90deg, #f8f9fa 1px, transparent 1px); background-size: 60px 100%; }
+        .dropzone { height: 210px; border-bottom: 1px solid var(--avio-border); position: relative; width: 2880px; }
         
         .flight { 
             position: absolute; height: 65px; top: 75px; background: white; 
@@ -50,8 +44,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer;
         }
 
-        /* DYNAMIC TIER CLASSES */
-        .dly-minor { border-left-color: var(--avio-blue); background: #f0f7ff; }
+        /* DELAY TIERS */
         .dly-yellow { border-left-color: var(--warn); background: #fffdf0; }
         .dly-red { border-left-color: var(--danger); background: #fff5f5; }
         .dly-severe { border-left-color: #000; background: #2d3436; color: white !important; }
@@ -59,16 +52,12 @@
         .dly-curfew { border-left-color: #d35400; background: #fff3e0; }
         .slot-border { border: 2px dashed #e67e22 !important; }
 
-        /* UI ELEMENTS */
         #time-cursor { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); z-index: 100; pointer-events: none; }
         aside { background: white; border-left: 1px solid var(--avio-border); padding: 15px; overflow-y: auto; }
-        .btn { border: 1px solid var(--avio-border); background: white; padding: 6px 12px; cursor: pointer; font-size: 11px; font-weight: 600; border-radius: 4px; width: 100%; margin-top: 5px; }
         .ascm-card { border: 1px solid var(--avio-border); padding: 10px; margin-bottom: 10px; border-radius: 4px; font-size: 11px; background: #fafbfc; }
+        .btn { border: 1px solid var(--avio-border); background: white; padding: 6px 12px; cursor: pointer; font-size: 11px; font-weight: 600; border-radius: 4px; width: 100%; margin-top: 5px; }
         footer { height: 120px; background: var(--avio-navy); color: #94a3b8; padding: 10px; overflow-y: auto; font-family: monospace; font-size: 11px; }
-        .warning-text { color: var(--danger); font-weight: bold; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
 
-        /* MODAL */
         #modal { visibility: hidden; opacity: 0; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:999; display:flex; align-items:center; justify-content:center; }
         #modal.active { visibility: visible; opacity: 1; }
         .modal-content { background: white; padding: 30px; border-radius: 8px; width: 480px; border-top: 6px solid var(--avio-navy); }
@@ -77,11 +66,11 @@
 <body>
 
 <header>
-    <div><span style="opacity:0.6">AVIOBOOK // </span><b>NORDIC OPS</b></div>
+    <div><span style="opacity:0.6">AVIOBOOK // </span><b>MCC MASTER</b></div>
     <div style="display:flex; gap:30px; font-size:12px; align-items:center;">
         <span>UTC: <b id="clock">07:00</b></span>
-        <span>REVENUE: <b id="rev" style="color:var(--success)">12,500,000</b> DKK</span>
-        <button class="btn" onclick="triggerTechEvent()" style="width:auto; margin:0; border-color:var(--danger); color:var(--danger)">FORCE TECH ALERT</button>
+        <span>BANK: <b id="rev" style="color:var(--success)">12,500,000</b> DKK</span>
+        <button class="btn" onclick="triggerTechEvent()" style="width:auto; margin:0; border-color:var(--danger); color:var(--danger)">TEST FAULT</button>
     </div>
 </header>
 
@@ -94,11 +83,11 @@
         </div>
     </div>
     <aside>
-        <h4 style="margin:0 0 12px 0; font-size:11px; text-transform:uppercase; color:#7f8c8d; letter-spacing:1px;">ASCMI Sell Marketplace</h4>
+        <h4 style="margin:0 0 12px 0; font-size:11px; text-transform:uppercase; color:#7f8c8d;">ASCMI Market</h4>
         <div id="ascm-list"></div>
         <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-        <h4 style="margin:0 0 10px 0; font-size:11px; text-transform:uppercase; color:#7f8c8d;">MCC Log</h4>
-        <div id="mcc-feed" style="font-size:11px; color:#999;">Monitoring health...</div>
+        <h4 style="margin:0 0 10px 0; font-size:11px; text-transform:uppercase; color:#7f8c8d;">MCC Alerts</h4>
+        <div id="mcc-feed" style="font-size:11px; color:#999;">No active defects.</div>
     </aside>
 </main>
 
@@ -113,25 +102,19 @@
 </div>
 
 <script>
-    // --- APP STATE ---
     let gameTime = 420; 
     let revenue = 12500000;
     let crewPool = [];
     let externalOffers = [];
     const BASES = { 'CPH': 60, 'BLL': 20, 'HEL': 15, 'ARN': 5 };
-    const DESTINATIONS = ['LPA', 'TFS', 'PMI', 'HRG'];
     
     let fleet = Array.from({length: 13}, (_, i) => ({
-        id: i, 
-        tail: i === 12 ? 'OY-SPARE' : `OY-GM${String.fromCharCode(65+i)}`,
+        id: i, tail: i === 12 ? 'OY-SPARE' : `OY-GM${String.fromCharCode(65+i)}`,
         base: i === 12 ? 'CPH' : Object.keys(BASES)[i % 4],
-        status: "ACTIVE", techAlert: false, rtsTime: 0, discretion: false,
-        crew: [], flights: []
+        status: "ACTIVE", techAlert: false, rtsTime: 0, discretion: false, crew: [], flights: []
     }));
 
-    // --- INITIALIZATION ---
     function init() {
-        // Build 100-Crew Database
         let idCounter = 0;
         Object.keys(BASES).forEach(base => {
             for(let i=0; i<BASES[base]; i++) {
@@ -140,36 +123,31 @@
             }
         });
 
-        // Set Symmetric Rotation Schedule
         fleet.forEach((ac, i) => {
             if (i === 12) return; 
             ac.crew = crewPool.filter(c => c.base === ac.base && c.status === "READY").slice(0, 3);
             ac.crew.forEach(c => c.status = "ASSIGNED");
-
             const start = 480 + (i * 20);
-            const dest = DESTINATIONS[i % 4];
             ac.flights = [
-                { id: Math.random(), route: `${ac.base}-${dest}`, start, dur: 310, dly: 0, slot: (i%3===0?{ctot:start+40}:null) },
-                { id: Math.random(), route: `${dest}-${ac.base}`, start: start + 370, dur: 330, dly: 0, slot: null }
+                { id: Math.random(), route: `${ac.base}-LPA`, start, dur: 310, dly: 0, slot: (i%3===0?{ctot:start+40}:null) },
+                { id: Math.random(), route: `LPA-${ac.base}`, start: start + 370, dur: 330, dly: 0, slot: null }
             ];
         });
 
         const hr = document.getElementById('hours');
         for(let i=0; i<24; i++) hr.innerHTML += `<div class="hour">${i.toString().padStart(2,'0')}:00</div>`;
-        
         setInterval(tick, 1000);
         render();
         generateASCM();
     }
 
-    // --- ENGINE ---
     function tick() {
         gameTime++;
-        if(gameTime % 2 === 0) updateClocks();
-        if(gameTime % 30 === 0) render();
+        updateClocks();
+        if(gameTime % 20 === 0) render();
         if(gameTime % 240 === 0) generateASCM();
         if(Math.random() < 0.0003) triggerTechEvent();
-        checkMaint();
+        checkAOG();
     }
 
     function updateClocks() {
@@ -187,24 +165,20 @@
             const isAOG = ac.status === "AOG";
             tails.innerHTML += `
                 <div class="tail-cell ${isAOG ? 'aog' : ''} ${ac.techAlert ? 'tech-alert' : ''}">
-                    <div style="font-weight:700; color:var(--avio-navy);">${ac.tail} <small style="font-weight:400; color:#999">(${ac.base})</small></div>
+                    <div style="font-weight:700; color:var(--avio-navy);">${ac.tail}</div>
                     <div class="crew-list">
-                        ${ac.crew.map((c, ci) => `<span onclick="toggleDiscretion(${idx})"><b class="${c.fatigueScore > 75 ? 'fatigued' : ''} ${ac.discretion ? 'discretion-active' : ''}">${c.role}:</b> ${c.name}</span>`).join('<br>')}
+                        ${ac.crew.map((c, ci) => `<span><b class="${c.fatigueScore > 75 ? 'fatigued' : ''}">${c.role}:</b> ${c.name}</span>`).join('<br>')}
                     </div>
-                    <div style="font-size:9px; color:#7f8c8d; display:flex; justify-content:space-between; align-items:center;">
-                        <span>BASE SBY: ${crewPool.filter(p=>p.base===ac.base && p.status==="READY").length}</span>
-                        <span style="color:${isAOG ? 'var(--danger)' : 'var(--success)'}">${isAOG ? 'AOG' : 'ACTIVE'}</span>
-                    </div>
-                    ${ac.techAlert ? `<button class="btn" style="margin:0; background:var(--warn); border:0; color:black;" onclick="openMCC(${idx})">CONTACT MCC</button>` : ''}
+                    ${ac.techAlert ? `<button class="btn" style="background:var(--warn); border:0; color:black;" onclick="openMCC(${idx})">CONTACT MCC</button>` : ''}
+                    <div style="font-size:9px; color:#7f8c8d;">${isAOG ? 'AOG - RTS '+formatMins(ac.rtsTime) : 'ACTIVE'}</div>
                 </div>`;
 
             const l = document.createElement('div');
             l.className = 'dropzone'; l.dataset.idx = idx;
             ac.flights.forEach((f, fIdx) => {
-                // FDP & Curfew Calculation
-                const reportTime = ac.flights[0].start - 60;
+                const report = ac.flights[0].start - 60;
                 const arrival = f.start + f.dly + f.dur;
-                const fdp = arrival - reportTime;
+                const fdp = arrival - report;
                 
                 let dlyCls = '';
                 if (arrival > 1380) dlyCls = 'dly-curfew';
@@ -212,18 +186,10 @@
                 else if (f.dly >= 180) dlyCls = 'dly-severe';
                 else if (f.dly >= 120) dlyCls = 'dly-red';
                 else if (f.dly >= 45) dlyCls = 'dly-yellow';
-                else if (f.dly >= 15) dlyCls = 'dly-minor';
 
-                l.innerHTML += `<div class="flight ${dlyCls} ${f.slot ? 'slot-border' : ''}" id="f-${f.id}" style="width:${f.dur*2}px; left:${f.start*2}px" oncontextmenu="event.preventDefault(); openPPS(${idx}, '${f.id}')">
-                    <div style="display:flex; justify-content:space-between"><b>${f.route}</b> <b>${f.dly > 0 ? '+'+f.dly : ''}</b></div>
-                    <div style="font-size:8px; margin-top:5px; opacity:0.8; display:flex; justify-content:space-between;">
-                        <span>BLK: ${Math.floor(f.dur/60)}h${f.dur%60}m</span>
-                        <span>FDP: ${Math.floor(fdp/60)}h${fdp%60}m</span>
-                    </div>
-                    <div style="font-size:7px; margin-top:4px; font-weight:bold;">
-                        ${arrival > 1380 ? '<span class="warning-text">CURFEW DIV</span>' : (fdp > 780 && !ac.discretion) ? '<span class="warning-text">CREW ILLEGAL</span>' : ''}
-                    </div>
-                    ${f.slot ? `<div style="position:absolute; bottom:2px; right:4px; font-weight:bold; color:#e67e22; font-size:8px;">CTOT ${formatMins(f.slot.ctot)}</div>` : ''}
+                l.innerHTML += `<div class="flight ${dlyCls}" style="width:${f.dur*2}px; left:${f.start*2}px">
+                    <b>${f.route}</b> <b>${f.dly > 0 ? '+'+f.dly : ''}</b><br>
+                    <small>FDP: ${Math.floor(fdp/60)}h${fdp%60}m</small>
                 </div>`;
             });
             lanes.appendChild(l);
@@ -231,116 +197,59 @@
         renderASCM();
     }
 
-    // --- LOGIC FUNCTIONS ---
-    function toggleDiscretion(idx) {
-        fleet[idx].discretion = !fleet[idx].discretion;
-        if(fleet[idx].discretion) {
-            fleet[idx].crew.forEach(c => c.fatigueScore += 25);
-            log('CREW', `Commander's Discretion authorized for ${fleet[idx].tail}. +25 Fatigue.`, 'warn');
-        }
-        render();
-    }
-
-    function openPPS(acIdx, fId) {
-        const f = fleet[acIdx].flights.find(fl => fl.id == fId);
-        if(!f.slot) return;
-        document.getElementById('m-title').innerText = `PPS Terminal: ${f.route}`;
-        document.getElementById('m-body').innerHTML = `
-            <div style="font-family:monospace; background:#000; color:#10ac84; padding:15px; border-radius:4px; font-size:11px;">
-                SAM SLOT MSG // ${f.route}<br>----------------------------<br>
-                REG: ${fleet[acIdx].tail} | EOBT: ${formatMins(f.start)}<br>
-                CTOT: ${formatMins(f.slot.ctot)} | DLY: ${f.slot.ctot - f.start}m
-            </div>
-            <button class="btn" style="background:var(--success); color:white;" onclick="improveSlot(${acIdx}, '${fId}')">REA: REQUEST IMPROVEMENT</button>
-        `;
-        document.getElementById('modal').classList.add('active');
-    }
-
-    function improveSlot(acIdx, fId) {
-        const f = fleet[acIdx].flights.find(fl => fl.id == fId);
-        const imp = Math.floor(Math.random() * 25) + 10;
-        f.slot.ctot -= imp; f.dly = Math.max(0, f.slot.ctot - f.start);
-        log('ATC', `Slot improved for ${f.route} by ${imp}m`, 'success');
-        closeModal(); render();
-    }
-
     function openMCC(idx) {
         const ac = fleet[idx];
+        const modal = document.getElementById('modal');
+        const qTime = Math.floor(Math.random() * 60) + 30;
         document.getElementById('m-title').innerText = `MCC Control: ${ac.tail}`;
         document.getElementById('m-body').innerHTML = `
-            <div style="background:#f8f9fa; padding:15px; border-radius:4px; font-size:11px; margin-bottom:15px;">
-                <b>REPORTED:</b> FUEL PUMP 1 BYPASS LIGHT<br>
-                <b>STATUS:</b> NO-GO ITEM<br>
-                <b>REPAIR:</b> 4 HOURS REQUIRED
+            <div style="background:#f8f9fa; padding:15px; font-size:11px; margin-bottom:15px; border-left:4px solid var(--warn);">
+                <b>DEFECT Investigation Required.</b><br>
+                Quick Fix: ${qTime}m (60% Success)
             </div>
-            <button class="btn" style="background:var(--danger); color:white;" onclick="groundPlane(${idx})">GROUND AIRCRAFT (AOG)</button>
-            <button class="btn" onclick="subCharter(${idx})">SUB-CHARTER (150,000 DKK)</button>
+            <button class="btn" style="background:var(--success); color:white;" onclick="attemptFix(${idx}, ${qTime})">ATTEMPT QUICK FIX</button>
+            <button class="btn" style="background:var(--danger); color:white;" onclick="groundPlane(${idx}, 240)">GROUND (4H REPAIR)</button>
+            <button class="btn" onclick="subCharter(${idx})">SUB-CHARTER (150k DKK)</button>
         `;
-        document.getElementById('modal').classList.add('active');
+        modal.classList.add('active');
     }
 
-    function groundPlane(idx) {
-        fleet[idx].status = "AOG"; fleet[idx].rtsTime = gameTime + 240; fleet[idx].techAlert = false;
-        log('MCC', `${fleet[idx].tail} is now AOG until ${formatMins(fleet[idx].rtsTime)}`, 'danger');
+    function attemptFix(idx, mins) {
+        if(Math.random() > 0.4) {
+            fleet[idx].status = "AOG"; fleet[idx].rtsTime = gameTime + mins; fleet[idx].techAlert = false;
+            log('MCC', `FIX SUCCESS: ${fleet[idx].tail} RTS in ${mins}m.`, 'success');
+        } else {
+            alert("Fix Failed. Grounding required.");
+        }
         closeModal(); render();
     }
 
-    function subCharter(idx) {
-        revenue -= 150000; fleet[idx].techAlert = false; fleet[idx].status = "ACTIVE";
-        log('OPS', `Sub-charter recovery for ${fleet[idx].tail} (-150k DKK)`, 'success');
+    function groundPlane(idx, mins) {
+        fleet[idx].status = "AOG"; fleet[idx].rtsTime = gameTime + mins; fleet[idx].techAlert = false;
+        log('MCC', `${fleet[idx].tail} Grounded (4h).`, 'danger');
         closeModal(); render();
     }
 
     function generateASCM() {
-        const airlines = ["Norwegian", "SAS", "Finnair", "SunClass"];
         externalOffers = [];
-        const stress = 1 + (fleet.filter(a => a.status === "AOG").length * 0.4);
         for(let i=0; i<3; i++) {
             const base = Object.keys(BASES)[Math.floor(Math.random()*4)];
-            const offer = Math.floor(12000 * stress * (base === 'ARN' ? 1.4 : 1.0));
-            externalOffers.push({ id: Math.random(), airline: airlines[i], role: ['CPT', 'FO', 'SCCM'][i], base, offer });
+            externalOffers.push({ id: Math.random(), airline: "SkyPartner", role: 'CPT', base, offer: 15000 });
         }
         renderASCM();
     }
 
-    function sellToMarket(id) {
-        const off = externalOffers.find(o => o.id === id);
-        const crew = crewPool.find(c => c.base === off.base && c.role === off.role && c.status === "READY" && c.fatigueScore < 40);
-        if(crew) {
-            revenue += off.offer; crew.status = "LEASED";
-            externalOffers = externalOffers.filter(o => o.id !== id);
-            log('ASCMI', `LEASED: ${crew.name} at ${off.base} to ${off.airline} (+${off.offer} DKK)`, 'success');
-            renderASCM();
-        } else {
-            alert("No rested standby crew found at " + off.base);
-        }
-    }
-
     function renderASCM() {
         const list = document.getElementById('ascm-list');
-        list.innerHTML = externalOffers.map(o => `
-            <div class="ascm-card">
-                <div><b>${o.airline}</b> <small>(${o.base})</small><br>${o.role} Req.</div>
-                <div style="text-align:right"><div style="color:var(--success); font-weight:bold;">${o.offer.toLocaleString()} DKK</div><button class="btn" onclick="sellToMarket(${o.id})" style="padding:2px 5px; font-size:9px;">SELL</button></div>
-            </div>
-        `).join('');
+        list.innerHTML = externalOffers.map(o => `<div class="ascm-card"><b>${o.base}</b> needs ${o.role}<br><b style="color:var(--success)">${o.offer} DKK</b></div>`).join('');
     }
 
-    // --- UTILS ---
+    function subCharter(idx) { revenue -= 150000; fleet[idx].techAlert = false; fleet[idx].status = "ACTIVE"; closeModal(); render(); }
     function formatMins(m) { return Math.floor(m/60).toString().padStart(2,'0') + ":" + (m%60).toString().padStart(2,'0'); }
-    function log(type, msg, sev) {
-        const color = sev === 'danger' ? 'var(--danger)' : (sev === 'success' ? 'var(--success)' : 'var(--warn)');
-        document.getElementById('log').innerHTML = `<div>[${formatMins(gameTime)}] <b style="color:${color}">${type}</b>: ${msg}</div>` + document.getElementById('log').innerHTML;
-    }
-    function triggerTechEvent() {
-        const ac = fleet[Math.floor(Math.random()*12)];
-        if(ac.status === "ACTIVE") ac.techAlert = true;
-        render();
-    }
+    function log(t, m, s) { document.getElementById('log').innerHTML = `<div>[${formatMins(gameTime)}] <b>${t}</b>: ${m}</div>` + document.getElementById('log').innerHTML; }
     function closeModal() { document.getElementById('modal').classList.remove('active'); }
-    function checkMaint() {
-        fleet.forEach(ac => { if(ac.status === "AOG" && gameTime >= ac.rtsTime) { ac.status = "ACTIVE"; log('MCC', `${ac.tail} Released to Service.`, 'success'); } });
-    }
+    function triggerTechEvent() { const ac = fleet[Math.floor(Math.random()*12)]; ac.techAlert = true; render(); }
+    function checkAOG() { fleet.forEach(ac => { if(ac.status === "AOG" && gameTime >= ac.rtsTime) ac.status = "ACTIVE"; }); }
 
     window.onload = init;
 </script>
