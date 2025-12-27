@@ -1,0 +1,10 @@
+{
+  "short_name": "SkyOps",
+  "name": "SkyOps: Nordic Fleet OCC",
+  "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/784/784844.png", "type": "image/png", "sizes": "512x512" }],
+  "start_url": "./index.html",
+  "background_color": "#0b0e14",
+  "display": "standalone",
+  "orientation": "landscape",
+  "theme_color": "#00d2ff"
+}
